@@ -20,41 +20,56 @@ import {createStore} from 'redux';
 
 
 // reducer function
-const counter = (state = 0, action) => {
-  if (action.type === 'INCREMENT') {
-    return state + 1;
-  } else if (action.type === 'DECREMENT') {
-    return state - 1;
-  } else {
-    return state;
+const todos = (state = [], action) => {
+  switch(action.type) {
+    case 'ADD_TODO':
+      return [
+        ...state,
+        {
+          id: action.id,
+          text: action.text,
+          completed: false
+        }
+      ];
+    case 'TOGGLE_TODO':
+      return state.map(todo => {
+        if (todo.id !== action.id){
+          return todo;
+        }
+
+        return {
+          ...todo,
+          completed: !todo.completed
+        };
+      });
+
+    default:
+      return state;
   }
-}
+};
 
-const Counter = ({value, onIncrement, onDecrement}) => (
-  <div>
-    <h1>{value}</h1>
-    <button onClick={onIncrement}>+</button>
-    <button onClick={onDecrement}>-</button>
-  </div>
+const testAddTodo = () => {
+  const stateBefore = [];
+  const action = {
+    type: 'ADD_TODO',
+    id: 0,
+    text: 'Hello'
+  };
+  const stateAfter = [
+    {
+      id: 0,
+      text: 'Hello',
+      completed: false
+    }
+  ];
 
-);
+  deepFreeze(stateBefore);
+  deepFreeze(action);
 
-const Input = ({onType}) => (
-  <input onKeyUp={onType} />
-);
+  expect(
+    todos(stateBefore, action)
+  ).toEqual(stateAfter);
+};
 
-// create a store with a reducer method (counter)
-const store = createStore(counter);
-
-
-const render = () => {
-  ReactDOM.render(<Counter value={store.getState()}
-  onIncrement={() => store.dispatch({type: 'INCREMENT'})}
-  onDecrement={() => store.dispatch({type: 'DECREMENT'})}
-  />, document.getElementById('app'))
-
-  ReactDOM.render(<Input onType={() => store.dispatch({type: 'INCREMENT'})}/>,
-    document.getElementById('login'))
-}
-store.subscribe(render);
-render();
+testAddTodo();
+console.log('All tests passed!')
