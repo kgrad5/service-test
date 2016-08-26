@@ -2,23 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {createStore, combineReducers} from 'redux';
 
-// var App = React.createClass({
-//   getInitialState: function () {
-//     return {text: ''};
-//   },
-//   componentDidMount: function(){
-//     fetch('http://localhost:8080/itamlink/status')
-//     .then(data => data.text())
-//     .then(text => this.setState({text: text}))
-//     .catch(err => console.log(err))
-//   },
-//   render: function() {
+// var App = React.createClass({   getInitialState: function () {     return
+// {text: ''};   },   componentDidMount: function(){
+// fetch('http://localhost:8080/itamlink/status')     .then(data => data.text())
+//     .then(text => this.setState({text: text}))     .catch(err =>
+// console.log(err))   },   render: function() {
 //
-//     return <div>Response - {this.state.text}</div>
-//   }
-// })
-
-// reducer functions
+//     return <div>Response - {this.state.text}</div>   } }) reducer functions
 const todo = (state, action) => {
     switch (action.type) {
         case 'ADD_TODO':
@@ -61,26 +51,50 @@ const visibilityFilter = (state = 'SHOW_ALL', action) => {
 }
 
 const todoApp = combineReducers({todos, visibilityFilter});
-//
-// const todoApp = (state = {}, action) => {
-//     return {
-//         todos: todos(state.todos, action),
-//         visibilityFilter: visibilityFilter(state.visibilityFilter, action)
-//     }
-// }
 
 const store = createStore(todoApp)
 
 // React
+const FilterLink = ({filter, currentFilter, children}) => {
+    if (currentFilter === filter)
+        return <span>{children}</span>
+
+    return (
+        <a
+            href="#"
+            onClick=
+            { e => { e.preventDefault(); store.dispatch({ type:'SET_VISIBILITY_FILTER', filter }) }}>
+            {children}
+        </a>
+    );
+};
+
+const getVisibleTodos = (todos, filter) => {
+    switch (filter) {
+        case 'SHOW_ALL':
+            return todos;
+        case 'SHOW_COMPLETED':
+            return todos.filter(t => t.completed);
+        case 'SHOW_ACTIVE':
+            return todos.filter(t => !t.completed);
+        default:
+            return todos;
+    }
+}
+
 let nextTodoId = 0;
 class TodoApp extends React.Component {
     render() {
+        const {visibilityFilter, todos} = this.props;
+        const visibleTodos = getVisibleTodos(todos, visibilityFilter);
         return (
             <div>
-                <input ref={node => {
+                <input
+                    ref={node => {
                     this.input = node;
                 }}/>
-                <button onClick={() => {
+                <button
+                    onClick={() => {
                     store.dispatch({
                         type: 'ADD_TODO',
                         text: this.input.value,
@@ -89,10 +103,23 @@ class TodoApp extends React.Component {
                     this.input.value = '';
                 }}>Add Todo</button>
                 <ul>
-                    {this.props.todos.map(todo => <li key={todo.id}>
+                    {visibleTodos.map(todo => <li
+                        key={todo.id}
+                        onClick={() => store.dispatch({type: 'TOGGLE_TODO', id: todo.id})}
+                        style={{
+                        textDecoration: todo.completed
+                            ? "line-through"
+                            : "none"
+                    }}>
                         {todo.text}
                     </li>)}
                 </ul>
+                <p>
+                    Show:{' '}
+                    <FilterLink filter="SHOW_ALL" currentFilter={visibilityFilter}>All</FilterLink>{', '}
+                    <FilterLink filter="SHOW_ACTIVE" currentFilter={visibilityFilter}>Active</FilterLink>{', '}
+                    <FilterLink filter="SHOW_COMPLETED" currentFilter={visibilityFilter}>Completed</FilterLink>
+                </p>
             </div>
         );
     }
@@ -100,70 +127,8 @@ class TodoApp extends React.Component {
 
 const render = () => {
     ReactDOM.render(
-        <TodoApp todos={store.getState().todos}/>, document.getElementById('app'))
+        <TodoApp {...store.getState()}/>, document.getElementById('app'));
 };
 
 store.subscribe(render);
 render();
-
-// tests
-const testAddTodo = () => {
-    const stateBefore = [];
-    const action = {
-        type: 'ADD_TODO',
-        id: 0,
-        text: 'Hello'
-    };
-    const stateAfter = [
-        {
-            id: 0,
-            text: 'Hello',
-            completed: false
-        }
-    ];
-
-    deepFreeze(stateBefore);
-    deepFreeze(action);
-
-    expect(todos(stateBefore, action)).toEqual(stateAfter);
-};
-
-const testToggleTodo = () => {
-    const stateBefore = [
-        {
-            id: 0,
-            text: 'Hello',
-            completed: false
-        }, {
-            id: 1,
-            text: 'GoodBye',
-            completed: false
-        }
-    ];
-    const action = {
-        type: 'TOGGLE_TODO',
-        id: 1
-    }
-    const stateAfter = [
-        {
-            id: 0,
-            text: 'Hello',
-            completed: false
-        }, {
-            id: 1,
-            text: 'GoodBye',
-            completed: true
-        }
-    ];
-
-    deepFreeze(stateBefore);
-    deepFreeze(action);
-
-    expect(todos(stateBefore, action)).toEqual(stateAfter);
-
-}
-
-testAddTodo();
-testToggleTodo();
-
-console.log('All tests passed!')
