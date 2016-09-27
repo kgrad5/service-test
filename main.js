@@ -74,7 +74,7 @@ const todoApp = combineReducers({todos, visibilityFilter});
 
 // React
 const Link = ({active, children, onClick}) => {
-    if (active)
+    if (active) 
         return <span>{children}</span>
 
     return (
